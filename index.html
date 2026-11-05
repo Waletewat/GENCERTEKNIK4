@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Gencer Teknik - İş & Mesai & Borç & QR PDKS Portalı</title>
+    
+    <!-- PWA, iOS Safari ve Android Chrome Mobil Uygulama Ayarları -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Gencer Teknik">
+    <meta name="theme-color" content="#05080e">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Özel Uygulama Simgeleri (Favicon & Apple Touch Icon) Jfif Olarak Güncellendi -->
+    <link rel="icon" type="image/jpeg" href="56329_2.jfif">
+    <link rel="apple-touch-icon" href="56329_2.jfif">
+    
+    <!-- Web App Manifest (Android Standalone Uygulama Desteği) -->
+    <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Gencer Teknik Portal","short_name":"Gencer Teknik","start_url":".","display":"standalone","orientation":"portrait","background_color":"%2305080e","theme_color":"%2305080e","icons":[{"src":"56329_2.jfif","sizes":"192x192","type":"image/jpeg"},{"src":"56329_2.jfif","sizes":"512x512","type":"image/jpeg"}]}'>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'] },
+                    colors: { brandOrange: '#F38E23', brandDark: '#121A29' },
+                    keyframes: {
+                        modalEnter: { '0%': { opacity: '0', transform: 'scale(0.95) translateY(10px)' }, '100%': { opacity: '1', transform: 'scale(1) translateY(0)' } },
+                        pulseGlow: { '0%, 100%': { boxShadow: '0 0 15px rgba(243, 142, 35, 0.2)' }, '50%': { boxShadow: '0 0 30px rgba(243, 142, 35, 0.4)' } },
+                        floatAnim: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-6px)' } }
+                    },
+                    animation: {
+                        'modal-enter': 'modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
+                        'float': 'floatAnim 3s ease-in-out infinite'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html, body {
+            overscroll-behavior-y: none;
+            touch-action: manipulation;
+            -webkit-text-size-adjust: 100%;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05080e;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* iOS Notch ve Home Bar Desteği (Safe Area Padding) */
+        .safe-area-top {
+            padding-top: max(1rem, env(safe-area-inset-top));
+        }
+        .safe-area-bottom {
+            padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+        }
+
+        .industrial-bg {
+            background-color: #0b111e;
+            background-image: linear-gradient(rgba(243, 142, 35, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(243, 142, 35, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .active-card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border: 1.5px solid rgba(243, 142, 35, 0.6);
+            box-shadow: 0 0 20px rgba(243, 142, 35, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-card:active {
+            transform: scale(0.97);
+        }
+        .active-card:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(243, 142, 35, 0.4); }
+        .locked-overlay { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 50; pointer-events: auto; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .modal-base { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .modal-hidden { opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .modal-visible { opacity: 1; pointer-events: auto; transform: scale(1); z-index: 100; }
+
+        #toastMsg { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; }
+
+        @media (min-width: 768px) {
+            .desktop-container { max-width: 1000px !important; height: 90vh !important; border-radius: 40px !important; border: 12px solid #0f172a !important; margin: auto; }
+            .desktop-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 20px !important; }
+            .desktop-span-2 { grid-column: span 2 / span 2 !important; }
+            .desktop-span-4 { grid-column: span 4 / span 4 !important; }
+        }
+    </style>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        window.db = null;
+        let toastTimer = null;
+        window.showToast = function(msg, isErr=true) {
+            const toast = document.getElementById('toastMsg');
+            if (toast) {
+                if (toastTimer) clearTimeout(toastTimer);
+                toast.innerText = msg;
+                toast.className = `absolute bottom-24 left-1/2 -translate-x-1/2 z-[500] px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl whitespace-nowrap border ${isErr ? 'bg-rose-600 border-rose-400 text-white' : 'bg-emerald-600 border-emerald-400 text-white'}`;
+                toast.style.opacity = '1'; toast.style.transform = 'translate(-50%, 0)';
+                toastTimer = setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translate(-50%, 150%)'; }, 3000);
+            }
+        };
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAZny955XO8L5dXsbSXeXXSf5XEyh2IIho",
+            authDomain: "hasan-ce5f9.firebaseapp.com",
+            projectId: "hasan-ce5f9",
+            storageBucket: "hasan-ce5f9.firebasestorage.app",
+            messagingSenderId: "884455783055",
+            appId: "1:884455783055:web:00dbf707bc89b440e4cefa",
+            measurementId: "G-45FHXFGJZ9"
+        };
+        const app = initializeApp(firebaseConfig);
+        window.db = getFirestore(app);
+
+        // Firestore İşlemleri
+        window.fbAddBorc = async (rec) => await addDoc(collection(window.db, 'borc_records'), { ...rec, createdAt: serverTimestamp() });
+        window.fbUpdateBorcStatus = async (id, resolved) => await updateDoc(doc(window.db, 'borc_records', id), { resolved });
+        window.fbDeleteBorc = async (id) => await deleteDoc(doc(window.db, 'borc_records', id));
+        window.fbUpdateBorcNotified = async (id, weeks) => await updateDoc(doc(window.db, 'borc_records', id), { notifiedWeeks: weeks });
+        
+        window.fbAddMesai = async (rec) => await addDoc(collection(window.db, 'mesai_records'), { ...rec, createdAt: serverTimestamp() });
+        window.fbDeleteMesai = async (id) => await deleteDoc(doc(window.db, 'mesai_records', id));
+        window.fbAddStaff = async (name) => await addDoc(collection(window.db, 'staff_records'), { name, status: 'Aktif', role: 'Normal', pass: '1234', createdAt: serverTimestamp() });
+        window.fbUpdateStaffStatus = async (id, name, st) => { if(id.startsWith('def')){ await addDoc(collection(window.db,'staff_records'),{name,status:st,role:'Normal',createdAt:serverTimestamp()});}else{ await updateDoc(doc(window.db,'staff_records',id),{status:st});} }
+        window.fbUpdateStaffRole = async (id, name, rl) => { if(id.startsWith('def')){ await addDoc(collection(window.db,'staff_records'),{name,status:'Aktif',role:rl,createdAt:serverTimestamp()});}else{ await updateDoc(doc(window.db,'staff_records',id),{role:rl});} window.showToast('Ünvan değişti!', false); }
+        window.fbUpdatePassword = async (id, newPass) => { if(id.startsWith('def') || id.startsWith('admin1')){ window.showToast('Gömülü hesap şifresi webden değişmez!'); return; } await updateDoc(doc(window.db,'staff_records',id),{pass:newPass}); window.showToast('Şifre güncellendi!', false); }
+        window.fbDeleteStaff = async (id) => { if(!id.startsWith('def')) await deleteDoc(doc(window.db, 'staff_records', id)); }
+        window.fbDeletePdks = async (id) => await deleteDoc(doc(window.db, 'pdks_records', id));
+        window.fbAddNotification = async (rec) => await addDoc(collection(window.db, 'notifications'), { ...rec, createdAt: serverTimestamp() });
+        window.fbDeleteNotif = async (id) => await deleteDoc(doc(window.db, 'notifications', id));
+        window.fbAddMalzeme = async (rec) => await addDoc(collection(window.db, 'malzeme_teslim'), { ...rec, createdAt: serverTimestamp() });
+        window.fbDeleteMalzeme = async (id) => await deleteDoc(doc(window.db, 'malzeme_teslim', id));
+
+        // SADECE MESAİ VE GİRİŞ/ÇIKIŞ LOGLARINI SIFIRLAMA (ADMIN ÖZEL)
+        window.fbResetMesaiAndPdksData = async () => {
+            if (!confirm("DİKKAT! Tüm mesai kayıtları ve PDKS giriş-çıkış logları KALICI OLARAK SİLİNECEKTİR. Emin misiniz?")) return;
+            try {
+                const collectionsToClear = ['mesai_records', 'pdks_records'];
+                for (const colName of collectionsToClear) {
+                    const snap = await getDocs(collection(window.db, colName));
+                    snap.forEach(async (d) => {
+                        await deleteDoc(doc(window.db, colName, d.id));
+                    });
+                }
+                window.showToast("Mesai ve PDKS logları başarıyla sıfırlandı!", false);
+            } catch (err) {
+                console.error(err);
+                window.showToast("Sıfırlama sırasında hata oluştu!");
+            }
+        };
+
+        // Firestore Dinleyicileri
+        onSnapshot(collection(window.db, 'borc_records'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncBorcData === 'function') window.syncBorcData(l); });
+        onSnapshot(collection(window.db, 'mesai_records'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncMesaiData === 'function') window.syncMesaiData(l); });
+        onSnapshot(collection(window.db, 'staff_records'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncStaffData === 'function') window.syncStaffData(l); });
+        onSnapshot(collection(window.db, 'pdks_records'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncPdksData === 'function') window.syncPdksData(l); });
+        onSnapshot(collection(window.db, 'notifications'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncNotifs === 'function') window.syncNotifs(l); });
+        onSnapshot(collection(window.db, 'malzeme_teslim'), (s) => { let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); if(typeof window.syncMalzemeData === 'function') window.syncMalzemeData(l); });
+    </script>
+</head>
+<body class="flex justify-center items-center h-full w-full p-0 sm:p-4 bg-[#05080e]">
+    
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastMsg" class="opacity-0 pointer-events-none transition-all duration-300"></div>
+
+    <!-- TAM EKRAN GÖRSEL GÖRÜNTÜLEYİCİ -->
+    <div id="imageViewerModal" class="modal-base modal-hidden absolute inset-0 bg-black/95 z-[400] flex flex-col items-center justify-center p-4">
+        <button onclick="closeModal('imageViewerModal')" class="absolute top-8 right-6 text-white bg-slate-800/80 w-12 h-12 rounded-full flex items-center justify-center hover:bg-slate-700 transition-colors shadow-xl"><i class="fa-solid fa-xmark text-2xl"></i></button>
+        <img id="fullScreenImage" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-slate-700">
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="fixed inset-0 z-[300] bg-[#05080e] flex flex-col justify-center items-center p-6 transition-all duration-700">
+        <div class="wave-container absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#F38E23_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div class="relative z-10 w-full max-w-[320px] bg-[#0f172a] border border-amber-500/30 p-8 rounded-3xl shadow-2xl flex flex-col items-center animate-modal-enter">
+            <!-- PWA LOGOSU BURAYA DA EKLENDİ (Tasarım Bütünlüğü İçin) -->
+            <div class="w-16 h-16 rounded-2xl overflow-hidden border border-amber-500/50 mb-4 shadow-[0_0_20px_rgba(243,142,35,0.4)] bg-slate-900 flex items-center justify-center animate-float">
+                <img src="56329_2.jfif" alt="GT Logo" class="w-full h-full object-cover">
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-widest uppercase mb-1">GİRİŞ <span class="text-[#F38E23]">YAP</span></h1>
+            <p class="text-[10px] text-slate-400 mb-6 uppercase tracking-widest text-center">Gencer Teknik Portal</p>
+            <div class="w-full space-y-4">
+                <select id="loginUserSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-amber-400 font-bold outline-none transition-all focus:border-amber-500"></select>
+                <input type="password" id="loginPass" placeholder="Şifrenizi girin" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white font-bold outline-none transition-all focus:border-amber-500">
+                
+                <div class="w-full mt-2">
+                    <button onclick="handleLogin()" class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 text-[#121A29] font-black text-sm rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> SİSTEME GİR
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="desktop-container relative w-full h-full max-w-sm sm:h-[844px] industrial-bg sm:rounded-[36px] shadow-2xl overflow-hidden flex flex-col justify-between">
+        
+        <!-- HEADER -->
+        <div class="relative z-10 safe-area-top pb-2 px-5 flex justify-center items-center shrink-0">
+            <button onclick="handleLogout()" class="absolute right-5 top-12 sm:top-6 w-10 h-10 bg-rose-500/10 border border-rose-500/30 rounded-full flex items-center justify-center text-rose-500 hover:bg-rose-500 hover:text-white transition-all hover:scale-110 active:scale-95 z-20" title="Çıkış Yap">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+
+            <button onclick="openModal('notifModal')" id="btn_notif" class="absolute right-[4.5rem] top-12 sm:top-6 w-10 h-10 bg-slate-900 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 hover:text-amber-400 transition-all hover:scale-110 active:scale-95 z-20">
+                <i class="fa-solid fa-bell"></i>
+                <span id="notifBadge" class="hidden absolute top-0 right-0 w-3 h-3 bg-rose-600 rounded-full border-2 border-[#0b111e] animate-ping"></span>
+            </button>
+            
+            <div class="flex items-center gap-3 bg-[#0f172a]/90 backdrop-blur-md px-4 py-2.5 rounded-xl border border-amber-500/30 shadow-xl max-w-[300px] animate-pulse-glow">
+                <div class="w-9 h-9 rounded-lg overflow-hidden border border-amber-500/40 shrink-0 bg-slate-900 flex items-center justify-center animate-float">
+                    <img src="56329_2.jfif" alt="GT Logo" class="w-full h-full object-cover">
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-base sm:text-lg font-black tracking-widest text-white uppercase leading-tight">GENCER <span class="text-[#F38E23]">TEKNİK</span></h1>
+                    <span id="headerUserRole" class="text-[9px] font-bold text-[#F38E23] tracking-[0.2em] uppercase">SİSTEM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOME GRID -->
+        <div class="relative z-10 flex-1 px-6 py-2 flex flex-col justify-center overflow-y-auto no-scrollbar">
+            <div class="grid grid-cols-2 desktop-grid gap-3 my-auto w-full h-full content-center">
+                
+                <!-- BORÇ / DEĞİŞİM TAKİP SEÇİM BUTONU -->
+                <button id="btn_borc_secim" class="active-card desktop-span-2 relative text-white rounded-2xl h-36 flex flex-col justify-between items-center active:scale-95 transition-all overflow-hidden group">
+                    <div id="content_borc_secim" class="w-full h-full p-3.5 flex flex-col justify-between items-center transition-all">
+                        <span class="w-full text-center border-b border-slate-700/60 pb-1.5 font-extrabold text-amber-400 text-[11px] tracking-wider">BORÇ / DEĞİŞİM</span>
+                        <div class="w-12 h-12 rounded-xl bg-slate-800/90 border border-amber-500/40 flex items-center justify-center my-auto group-hover:scale-110 transition-transform"><i class="fa-solid fa-file-invoice-dollar text-xl text-[#F38E23]"></i></div>
+                        <div class="text-[9px] text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800">Firma Borç & Değişimleri</div>
+                    </div>
+                    <div id="lock_borc" class="hidden absolute inset-0 z-20 locked-overlay bg-slate-900/60 flex items-center justify-center">
+                        <i class="fa-solid fa-lock text-[#F38E23] text-5xl drop-shadow-[0_0_15px_rgba(243,142,35,0.8)] animate-bounce"></i>
+                    </div>
+                </button>
+
+                <!-- MESAİ TAKİP -->
+                <button id="btn_mesai" class="active-card desktop-span-2 relative text-white rounded-2xl h-36 flex flex-col justify-between items-center active:scale-95 transition-all overflow-hidden group">
+                    <div id="content_mesai" class="w-full h-full p-3.5 flex flex-col justify-between items-center transition-all">
+                        <span class="w-full text-center border-b border-slate-700/60 pb-1.5 font-extrabold text-amber-400 text-[11px] tracking-wider">MESAİ TAKİP</span>
+                        <div class="w-12 h-12 rounded-xl bg-slate-800/90 border border-amber-500/40 flex items-center justify-center my-auto group-hover:scale-110 transition-transform"><i class="fa-regular fa-clock text-xl text-[#F38E23]"></i></div>
+                        <div class="text-[9px] text-slate-400 bg-slate-900/60 px-2 py-0.5 rounded border border-slate-800">12 Ay & Takvim & Rapor</div>
+                    </div>
+                    <div id="lock_mesai" class="hidden absolute inset-0 z-20 locked-overlay bg-slate-900/60 flex items-center justify-center">
+                        <i class="fa-solid fa-lock text-[#F38E23] text-5xl drop-shadow-[0_0_15px_rgba(243,142,35,0.8)] animate-bounce"></i>
+                    </div>
+                </button>
+
+                <!-- MESAİ GİRİŞ / ÇIKIŞ YAP (QR KONTROLLÜ) -->
+                <button onclick="openModal('pdksModal')" id="btn_pdks" class="col-span-2 desktop-span-4 active-card text-white rounded-2xl p-4 h-32 flex flex-col justify-between items-center active:scale-95 transition-all group bg-gradient-to-r from-[#1e293b] via-[#151e2e] to-[#1e293b]">
+                    <div class="w-full text-center border-b border-slate-700/60 pb-1.5 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-qrcode text-amber-400 text-sm animate-pulse"></i>
+                        <span class="font-extrabold text-amber-400 text-xs tracking-wider uppercase">MESAİ GİRİŞ / ÇIKIŞ YAP</span>
+                    </div>
+                    <div class="flex items-center justify-center my-auto w-full"><div class="flex items-center gap-2 bg-slate-900/80 px-4 py-2 rounded-xl border border-amber-500/30 group-hover:border-amber-500 transition-colors"><i class="fa-solid fa-camera text-amber-400"></i><span class="text-xs font-bold text-slate-200">QR Okut / Manuel İşlem</span></div></div>
+                </button>
+
+                <!-- MALZEME TESLİM PANeli -->
+                <button onclick="openModal('malzemeModal')" id="btn_malzeme" class="col-span-1 desktop-span-2 active-card relative text-white rounded-2xl h-28 flex flex-col justify-between items-center active:scale-95 transition-all overflow-hidden group border border-emerald-600/50">
+                    <div class="w-full h-full p-3.5 flex flex-col justify-between items-center transition-all">
+                        <div class="w-full text-center border-b border-slate-700/60 pb-1 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-boxes-stacked text-emerald-400 text-[10px]"></i>
+                            <span class="font-extrabold text-emerald-400 text-[9px] tracking-wider uppercase">MALZEME TESLİM</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/90 border border-emerald-500/40 flex items-center justify-center my-auto group-hover:scale-110 transition-transform"><i class="fa-solid fa-camera text-lg text-emerald-400"></i></div>
+                    </div>
+                </button>
+
+                <!-- ŞİFRE İŞLEMLERİ -->
+                <button onclick="openPasswordModal()" id="btn_sifre" class="col-span-1 desktop-span-2 active-card relative text-white rounded-2xl h-28 flex flex-col justify-between items-center active:scale-95 transition-all overflow-hidden group border border-slate-600">
+                    <div class="w-full h-full p-3.5 flex flex-col justify-between items-center transition-all">
+                        <div class="w-full text-center border-b border-slate-700/60 pb-1 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-key text-slate-300 text-[10px]"></i>
+                            <span class="font-extrabold text-slate-300 text-[9px] tracking-wider uppercase">ŞİFRE İŞLEMLERİ</span>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-800/90 border border-slate-500/40 flex items-center justify-center my-auto group-hover:scale-110 transition-transform"><i class="fa-solid fa-pen-to-square text-lg text-slate-400"></i></div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- FOOTER NAV -->
+        <div class="relative z-10 safe-area-bottom h-24 sm:h-20 bg-[#0a0f19] border-t border-slate-800/80 px-12 flex items-center justify-between shrink-0">
+            <button onclick="switchTab('home')" class="flex flex-col items-center text-[#F38E23] p-2 hover:scale-110 active:scale-95 transition-transform"><i class="fa-solid fa-house text-2xl"></i><span class="text-[9px] font-bold mt-1 uppercase">Ana Sayfa</span></button>
+            <button onclick="switchTab('profile')" class="flex flex-col items-center text-slate-400 hover:text-[#F38E23] p-2 hover:scale-110 active:scale-95 transition-transform"><i class="fa-solid fa-user-gear text-2xl"></i><span class="text-[9px] font-bold mt-1 uppercase">Personel Yönetimi</span></button>
+        </div>
+
+        <!-- MODALLAR -->
+        
+        <!-- BORÇ / DEĞİŞİM SEÇİM MODALI -->
+        <div id="borcSecimModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e]/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 z-[150]">
+            <button onclick="closeModal('borcSecimModal')" class="absolute top-8 right-6 text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-3xl"></i></button>
+            <h2 class="text-xl font-black text-white mb-8 tracking-widest text-center"><span class="text-[#F38E23]">İŞLEM</span> TÜRÜNÜ SEÇİN</h2>
+            <div class="w-full max-w-sm space-y-4">
+                <button onclick="openBorcModal('borc')" class="w-full bg-slate-900 border border-amber-500/50 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(243,142,35,0.2)]">
+                    <i class="fa-solid fa-file-invoice-dollar text-4xl text-amber-500"></i>
+                    <span class="text-sm font-black text-white tracking-wider">BORÇ TAKİP</span>
+                </button>
+                <button onclick="openBorcModal('degisim')" class="w-full bg-slate-900 border border-emerald-500/50 p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                    <i class="fa-solid fa-arrow-right-arrow-left text-4xl text-emerald-500"></i>
+                    <span class="text-sm font-black text-white tracking-wider">DEĞİŞİM TAKİP</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MALZEME TESLİM LİSTE MODALI -->
+        <div id="malzemeModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar md:p-8 md:pt-16">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h2 class="text-base font-bold text-white"><i class="fa-solid fa-boxes-stacked text-emerald-500 mr-2"></i>Malzeme Teslimleri</h2>
+                <div class="flex gap-2">
+                    <button onclick="openModal('addMalzemeModal')" class="w-8 h-8 rounded-lg bg-emerald-500 text-slate-900 font-black flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all"><i class="fa-solid fa-plus text-sm"></i></button>
+                    <button onclick="closeModal('malzemeModal')" class="text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+            </div>
+            <div class="mt-4 flex flex-col h-full pb-24 md:max-w-xl md:mx-auto w-full">
+                <div class="relative w-full mb-4 shrink-0">
+                    <input type="text" id="malzemeSearch" onkeyup="renderMalzemeList()" placeholder="Firma ismine göre ara..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 pl-10 text-xs text-white outline-none focus:border-emerald-500 transition-colors">
+                    <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-slate-400"></i>
+                </div>
+                <div id="malzemeListContainer" class="space-y-4 overflow-y-auto no-scrollbar pb-10"></div>
+            </div>
+        </div>
+
+        <!-- MALZEME TESLİM EKLEME MODALI -->
+        <div id="addMalzemeModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar md:p-8 md:pt-16" style="z-index: 110;">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h3 class="text-sm font-bold text-emerald-400"><i class="fa-solid fa-plus-circle mr-1"></i> Yeni Teslimat Ekle</h3>
+                <button onclick="closeModal('addMalzemeModal')" class="text-slate-400 p-1 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="mt-4 space-y-4 flex-1 pb-24 md:max-w-md md:mx-auto w-full">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-400 block mb-1">Firma İsmi <span class="text-rose-500">*</span></label>
+                    <input type="text" id="malzemeFirmaInput" placeholder="Firma adını girin..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none focus:border-emerald-500">
+                </div>
+                
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+                        <span class="text-[11px] font-bold text-slate-300"><i class="fa-solid fa-file-invoice mr-1 text-slate-400"></i>Fatura / Belge Ekle</span>
+                        <div class="flex gap-1.5">
+                            <label class="bg-emerald-600/90 hover:bg-emerald-500 text-white p-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-camera text-xs"></i><span class="text-[9px] font-bold">Kamera</span>
+                                <input type="file" accept="image/*" capture="environment" onchange="handleMultipleImageUpload(this, 'fatura')" class="hidden">
+                            </label>
+                            <label class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-image text-xs"></i><span class="text-[9px] font-bold">Galeri</span>
+                                <input type="file" accept="image/*" multiple onchange="handleMultipleImageUpload(this, 'fatura')" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                    <div id="faturaPreviewGrid" class="flex flex-wrap gap-2">
+                        <span class="text-[10px] text-slate-500 italic p-1">Henüz fatura eklenmedi.</span>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+                        <span class="text-[11px] font-bold text-slate-300"><i class="fa-solid fa-box-open mr-1 text-slate-400"></i>Malzeme Fotoğrafı Ekle</span>
+                        <div class="flex gap-1.5">
+                            <label class="bg-emerald-600/90 hover:bg-emerald-500 text-white p-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-camera text-xs"></i><span class="text-[9px] font-bold">Kamera</span>
+                                <input type="file" accept="image/*" capture="environment" onchange="handleMultipleImageUpload(this, 'malzeme')" class="hidden">
+                            </label>
+                            <label class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg cursor-pointer transition-colors shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-image text-xs"></i><span class="text-[9px] font-bold">Galeri</span>
+                                <input type="file" accept="image/*" multiple onchange="handleMultipleImageUpload(this, 'malzeme')" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                    <div id="malzemePreviewGrid" class="flex flex-wrap gap-2">
+                        <span class="text-[10px] text-slate-500 italic p-1">Henüz malzeme fotoğrafı eklenmedi.</span>
+                    </div>
+                </div>
+                
+                <p class="text-[9px] text-slate-500 text-center"><i class="fa-solid fa-circle-info"></i> Birden fazla fotoğraf ekleyebilirsiniz.</p>
+                <button onclick="saveMalzeme()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg mt-2 active:scale-95 transition-all">Teslimatı Kaydet</button>
+            </div>
+        </div>
+
+        <!-- PDKS / QR MODAL -->
+        <div id="pdksModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar md:p-8 md:pt-16">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h2 class="text-base font-bold text-white"><i class="fa-solid fa-qrcode text-[#F38E23] mr-2"></i>Gencer Teknik PDKS Portalı</h2>
+                <button onclick="closePdksModal()" class="text-slate-400 p-2 hover:rotate-95 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="mt-4 space-y-4 flex-1 pb-24 md:max-w-xl md:mx-auto md:w-full">
+                <div id="qrScanSection" class="bg-slate-900 p-4 rounded-2xl border border-amber-500/50 text-center relative overflow-hidden shadow-xl">
+                    <p class="text-xs font-bold text-amber-400 mb-3"><i class="fa-solid fa-triangle-exclamation mr-1"></i> İşyerine ait resmi QR kodu kameraya okutun!</p>
+                    <div class="relative w-full h-48 bg-slate-950 rounded-xl overflow-hidden border border-amber-500/30 flex items-center justify-center">
+                        <video id="qrCameraVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                        <canvas id="qrCanvas" class="hidden"></canvas>
+                        <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 text-slate-400"><i class="fa-solid fa-qrcode text-4xl mb-2 text-amber-500 animate-pulse"></i><span class="text-xs font-bold text-amber-300">Kamera Bekleniyor...</span></div>
+                        <div class="absolute inset-0 border-2 border-dashed border-amber-500/60 pointer-events-none m-6 rounded-xl flex items-center justify-center"><span class="bg-slate-950/80 px-3 py-1 text-[10px] text-amber-400 font-bold rounded shadow">QR Kodu Buraya Hizalayın</span></div>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="startCamera()" class="flex-1 py-2.5 bg-amber-500 text-slate-950 font-black text-xs rounded-xl shadow hover:bg-amber-400 active:scale-95 transition-all"><i class="fa-solid fa-video mr-1"></i> Kamerayı Başlat</button>
+                        <button onclick="stopCamera()" class="py-2.5 px-4 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl active:scale-95 transition-all"><i class="fa-solid fa-stop"></i> Kapat</button>
+                    </div>
+                </div>
+
+                <div id="manualPdksAdminPanel" class="hidden bg-slate-900 p-4 rounded-2xl border border-orange-500/50 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span class="text-xs font-bold text-orange-400"><i class="fa-solid fa-user-shield mr-1"></i> Zoraki / Manuel PDKS (Admin)</span>
+                        <span id="manualAdminRoleBadge" class="text-[9px] bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded font-bold">Admin</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">QR okumayan durumlarda listeden personel seçip manuel giriş/çıkış saatleri ile işlem yapabilirsiniz.</p>
+                    <div class="space-y-2">
+                        <label class="text-[11px] text-slate-300 font-bold block">Personel Seçin</label>
+                        <select id="manualAdminStaffSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-amber-400 font-bold outline-none"></select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-emerald-400 font-bold block flex justify-between items-center">
+                                <span>Manuel Giriş Saati</span>
+                                <button onclick="document.getElementById('manualAdminInTimeInput').value=''" class="text-[8px] text-slate-500 hover:text-emerald-400">Temizle</button>
+                            </label>
+                            <input type="time" id="manualAdminInTimeInput" class="w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-2 text-xs text-emerald-400 font-bold outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-rose-400 font-bold block flex justify-between items-center">
+                                <span>Manuel Çıkış Saati</span>
+                                <button onclick="document.getElementById('manualAdminOutTimeInput').value=''" class="text-[8px] text-slate-500 hover:text-rose-400">Temizle</button>
+                            </label>
+                            <input type="time" id="manualAdminOutTimeInput" class="w-full bg-slate-950 border border-rose-500/40 rounded-xl p-2 text-xs text-rose-400 font-bold outline-none focus:border-rose-500">
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-slate-500 italic text-center">* Saat seçilmezse işlemin yapıldığı anki canlı saat baz alınır.</p>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="recordManualAdminPdks('Giriş')" class="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow active:scale-95 transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-right-to-bracket"></i> Manuel Giriş</button>
+                        <button onclick="recordManualAdminPdks('Çıkış')" class="py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow active:scale-95 transition-all flex items-center justify-center gap-1.5"><i class="fa-solid fa-right-from-bracket"></i> Manuel Çıkış</button>
+                    </div>
+                </div>
+
+                <div id="actionPanelSection" class="hidden bg-slate-900 p-5 rounded-2xl border border-emerald-500/60 space-y-4 shadow-[0_0_20px_rgba(16,185,129,0.15)] animate-modal-enter">
+                    <div class="flex items-center justify-between bg-emerald-950/40 border border-emerald-500/30 p-3 rounded-xl"><div class="flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i><span class="text-xs font-bold text-emerald-300">İşyeri QR Kodu Doğrulandı!</span></div><span id="pdksActiveUserLabel" class="text-xs font-black text-white"></span></div>
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button onclick="recordPdks('Giriş')" class="py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center gap-1"><i class="fa-solid fa-right-to-bracket text-lg"></i><span>GİRİŞ YAP</span></button>
+                        <button onclick="recordPdks('Çıkış')" class="py-4 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-lg active:scale-95 transition-all flex flex-col items-center justify-center gap-1"><i class="fa-solid fa-right-from-bracket text-lg"></i><span>ÇIKIŞ YAP</span></button>
+                    </div>
+                </div>
+
+                <div id="adminPdksLogsAdminOnly" class="hidden space-y-3 pt-2 border-t border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                            <i class="fa-solid fa-user-shield text-amber-500"></i> Admin Giriş / Çıkış Takip Paneli
+                        </h3>
+                        <span class="text-[9px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded font-bold">Özel Panel</span>
+                    </div>
+                    <div id="pdksLogContainer" class="space-y-2 max-h-56 overflow-y-auto no-scrollbar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESAİ MODAL -->
+        <div id="mesaiModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar">
+             <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h2 class="text-base font-bold text-white"><i class="fa-solid fa-calendar-days text-[#F38E23] mr-2"></i>Mesai Takip & Raporlar</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="openModal('addMesaiModal')" class="w-8 h-8 rounded-lg bg-[#F38E23] text-[#121A29] font-black flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all"><i class="fa-solid fa-plus text-sm"></i></button>
+                    <button onclick="closeModal('mesaiModal')" class="text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+            </div>
+            <div id="viewMonths" class="mt-4"><div class="grid grid-cols-3 gap-2.5" id="monthsGrid"></div></div>
+            <div id="viewDays" class="hidden mt-3 space-y-4 flex-1 pb-24">
+                <div class="flex justify-between items-center"><button onclick="showMonthsView()" class="text-xs text-[#F38E23] font-bold hover:underline"><i class="fa-solid fa-arrow-left"></i> Aylara Dön</button><span id="selectedMonthLabel" class="text-xs font-bold text-slate-300"></span></div>
+                <div class="bg-slate-900/90 p-2 rounded-xl"><div id="daysGrid" class="grid grid-cols-7 gap-1 text-center"></div></div>
+                <div><p class="text-[10px] text-slate-400 mb-1 text-center">* Mesaiyi silmek için üzerine 1 sn basılı tutun.</p><div id="mesaiListContainer" class="space-y-1.5 max-h-56 overflow-y-auto no-scrollbar"></div></div>
+            </div>
+            <div id="viewReport" class="hidden mt-3 space-y-4 flex-1 pb-24">
+                <div class="flex justify-between items-center"><button onclick="showMonthsView()" class="text-xs text-[#F38E23] font-bold hover:underline"><i class="fa-solid fa-arrow-left"></i> Aylara Dön</button><span id="selectedReportMonthLabel" class="text-xs font-bold text-amber-400 uppercase">Aylık Özet Rapor</span></div>
+                <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 space-y-3"><h3 class="text-xs font-bold text-slate-300 border-b border-slate-800 pb-2">Personel Bazlı Toplam Mesai Saatleri</h3><div id="monthlyReportList" class="space-y-2 max-h-72 overflow-y-auto no-scrollbar"></div></div>
+            </div>
+        </div>
+
+        <!-- MANUEL MESAİ EKLEME PANELİ -->
+        <div id="addMesaiModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h3 class="text-sm font-bold text-amber-400"><i class="fa-solid fa-plus-circle mr-1"></i> Manuel Mesai Ekle</h3>
+                <button onclick="closeModal('addMesaiModal')" class="text-slate-400 p-1 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="mt-4 space-y-4 flex-1 pb-24 md:max-w-md md:mx-auto w-full">
+                <div><label class="text-xs text-slate-400">Tarih Seçin</label><input type="date" id="manualMesaiDate" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div><label class="text-xs text-slate-400">Açıklama / Görev</label><input type="text" id="manualMesaiNote" placeholder="Örn: Saha Montaj" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div class="bg-slate-900/90 p-3 rounded-xl border border-amber-500/40 flex items-center justify-between gap-3">
+                    <div><span class="text-xs font-bold text-amber-400 block">Tüm Personele Ortak Saat</span><span class="text-[10px] text-slate-400">Tek tıkla herkese uygula (örn: 1.5, 8)</span></div>
+                    <div class="flex items-center gap-2"><input type="number" step="0.5" id="commonHoursInput" value="8" class="w-16 bg-slate-950 border border-amber-500/50 text-xs text-amber-400 font-bold rounded-lg p-2 text-center outline-none"><button onclick="applyCommonHours()" class="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-lg shadow">Uygula</button></div>
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-amber-500/30"><label class="text-xs text-amber-400 font-bold block mb-2">Personel ve Saatler</label><div id="manualStaffChecklist" class="space-y-2 max-h-48 overflow-y-auto no-scrollbar"></div></div>
+                <button onclick="saveManualMesai()" class="w-full py-3 bg-[#F38E23] text-[#121A29] font-black text-xs rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all">Mesaiyi Kaydet</button>
+            </div>
+        </div>
+
+        <!-- BORÇ / DEĞİŞİM TAKİP MODAL (DİNAMİK) -->
+        <div id="borcModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar">
+            <div class="flex justify-between pb-3 border-b border-slate-800 items-center shrink-0">
+                <h2 id="borcModalTitle" class="font-bold text-white"><i id="borcModalIcon" class="fa-solid fa-file-invoice-dollar text-[#F38E23] mr-2"></i>Borç Takip</h2>
+                <div class="flex gap-2"><button onclick="openModal('addBorcModal')" id="borcAddBtn" class="w-8 h-8 rounded-lg bg-[#F38E23] text-[#121A29] font-black flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all"><i class="fa-solid fa-plus text-sm"></i></button><button onclick="closeModal('borcModal')" class="text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button></div>
+            </div>
+            <div class="mt-4 space-y-4 flex-1 pb-24 overflow-y-auto no-scrollbar">
+                <div><h3 id="borcListActiveTitle" class="text-xs font-bold text-amber-400 mb-2 uppercase tracking-wider">● Aktif Borçlar</h3><div id="activeBorcList" class="space-y-2"></div></div>
+                <div class="mt-4"><h3 class="text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wider">✔ Çözülenler</h3><div id="resolvedBorcList" class="space-y-2"></div></div>
+            </div>
+        </div>
+
+        <!-- YENİ BORÇ / DEĞİŞİM EKLEME MODALI (DİNAMİK) -->
+        <div id="addBorcModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 overflow-y-auto no-scrollbar">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h3 id="addBorcTitle" class="text-sm font-bold text-amber-400"><i class="fa-solid fa-plus-circle mr-1"></i> Yeni Borç Ekle</h3>
+                <button onclick="closeModal('addBorcModal')" class="text-slate-400 p-1 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="mt-4 space-y-3 flex-1 pb-24 md:max-w-md md:mx-auto w-full">
+                <div><label class="text-xs text-slate-400">Kayıt Tarihi</label><input type="date" id="borcDateInput" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div><label class="text-xs text-slate-400">Firma Adı</label><input type="text" id="borcFirma" placeholder="Örn: Yıldız Yapı Ltd." class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div><label class="text-xs text-slate-400">Malzeme / Ürün Adı</label><input type="text" id="borcMalzeme" placeholder="Örn: Demir Profil" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div><label class="text-xs text-slate-400">Adet</label><input type="number" id="borcAdet" placeholder="Örn: 50" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></div>
+                <div><label class="text-xs text-slate-400">Açıklama</label><textarea id="borcAck" rows="2" placeholder="Örn: Acil sevkiyat veya değişim detayı" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs text-white outline-none focus:border-amber-500"></textarea></div>
+                <button id="saveBorcBtn" onclick="saveNewBorc()" class="w-full py-3 bg-[#F38E23] text-[#121A29] font-black text-xs rounded-xl shadow-lg mt-2 hover:scale-105 active:scale-95 transition-all">Borcu Kaydet</button>
+            </div>
+        </div>
+
+        <!-- ŞİFRE İŞLEMLERİ MODALI -->
+        <div id="passwordModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 md:p-8 overflow-y-auto no-scrollbar">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h2 class="text-base font-bold text-white"><i class="fa-solid fa-key text-[#F38E23] mr-2"></i>Şifre İşlemleri</h2>
+                <button onclick="closeModal('passwordModal')" class="text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div class="mt-4 bg-slate-900 p-5 rounded-2xl border border-slate-700 md:max-w-md md:mx-auto w-full">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-3 flex items-center gap-1.5"><i class="fa-solid fa-pen-to-square"></i> Şifre Değiştir</h3>
+                <label class="text-[11px] font-bold text-slate-400">Personel Seçin</label>
+                <select id="passUserSelect" class="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-amber-400 font-bold outline-none focus:border-amber-500"></select>
+                <label class="text-[11px] font-bold text-slate-400 mt-3 block">Yeni Şifre</label>
+                <input type="password" id="newPassInput" placeholder="Yeni şifre girin" class="w-full mt-1.5 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white outline-none focus:border-amber-500">
+                <button onclick="updatePassword()" class="w-full mt-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-[#121A29] font-black text-xs rounded-xl hover:scale-105 active:scale-95 transition-all">Şifreyi Güncelle</button>
+            </div>
+
+            <div id="adminPasswordListPanel" class="hidden mt-4 bg-slate-900 p-5 rounded-2xl border border-amber-500/40 md:max-w-md md:mx-auto w-full">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-3">
+                    <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-shield-halved text-amber-500"></i> Tüm Personel Şifre Listesi
+                    </h3>
+                    <span class="text-[9px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded font-bold">Admin Özel</span>
+                </div>
+                <p class="text-[10px] text-slate-400 mb-3">Aşağıda tüm personel ve yetkililerin mevcut panel giriş şifreleri yer almaktadır.</p>
+                <div id="adminPassListContainer" class="space-y-2 max-h-52 overflow-y-auto no-scrollbar"></div>
+            </div>
+        </div>
+
+        <!-- BİLDİRİMLER MODALI -->
+        <div id="notifModal" class="modal-base modal-hidden absolute inset-0 bg-[#0b111e] flex flex-col pt-12 sm:pt-4 p-4 md:p-8 overflow-y-auto no-scrollbar">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800 shrink-0">
+                <h2 class="text-base font-bold text-white"><i class="fa-solid fa-bell text-[#F38E23] mr-2"></i>Bildirim Paneli</h2>
+                <button onclick="closeModal('notifModal')" class="text-slate-400 p-2 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="notifListContainer" class="mt-4 space-y-2 flex-1 overflow-y-auto no-scrollbar md:max-w-lg md:mx-auto w-full pb-24"></div>
+        </div>
+
+        <!-- PERSONEL YÖNETİMİ TAB -->
+        <div id="profileTab" class="modal-base modal-hidden absolute inset-0 bg-[#121A29] z-40 p-6 pt-12 sm:pt-6 flex flex-col justify-between overflow-y-auto no-scrollbar">
+            <div>
+                <div class="flex justify-between pb-4 border-b border-slate-800"><h2 class="text-xl font-bold text-white">Personel Yönetimi</h2><button onclick="switchTab('home')" class="text-slate-400 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark text-xl"></i></button></div>
+                <div class="mt-4 space-y-3">
+                    <div class="flex gap-2"><input type="text" id="newStaffName" placeholder="Ad Soyad" class="flex-1 bg-slate-900 border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500"><button onclick="addNewCustomStaff()" class="bg-[#F38E23] text-[#121A29] font-bold px-4 rounded-lg text-xs hover:scale-105 active:scale-95 transition-all">Ekle</button></div>
+                    <div id="profileStaffList" class="space-y-2 max-h-[50vh] overflow-y-auto no-scrollbar pb-4 mt-4"></div>
+                    
+                    <div class="pt-4 border-t border-slate-800 space-y-2">
+                        <button onclick="window.fbResetMesaiAndPdksData()" class="w-full py-3 bg-amber-600/20 hover:bg-amber-600 border border-amber-500/40 text-amber-300 hover:text-white font-black text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left"></i> MESAİ VE GİRİŞ/ÇIKIŞ LOGLARINI SIFIRLA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PWA SERVICE WORKER ENTEGRASYONU -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swContent = `
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => self.clients.claim());
+                    self.addEventListener('fetch', e => {
+                        // Basit PWA Cache ve Fetch olayları
+                    });
+                `;
+                const blob = new Blob([swContent], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('PWA Service Worker başarıyla kaydedildi.', reg))
+                    .catch(err => console.log('PWA Service Worker hatası:', err));
+            });
+        }
+    </script>
+
+    <!-- SCRIPT -->
+    <script>
+        let currentUser = null; let currentUserRole = null; let currentUserId = null;
+        let liveData = { borc:[], mesai:[], staff:[], pdks:[], notifs:[], malzeme:[] };
+        let defaultStaff = [ { id: 'admin1', name: "HASAN GÜRBÜZ", status: 'Aktif', role: 'Admin', pass: 'hasan998' } ];
+
+        const mNames = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"]; 
+        let selectedMonthIndex = 10; let selectedDay = 3; let currentYear = 2026;
+        let currentBorcType = 'borc'; // 'borc' veya 'degisim'
+
+        window.syncStaffData = (l) => { liveData.staff = l; if(!currentUser) renderLoginSelect(); renderProfileStaffList(); renderPdksSelect(); renderManualAdminStaffSelect(); renderPassSelect(); renderManualChecklist(); };
+        window.syncPdksData = (l) => { liveData.pdks = l; renderPdksLogs(); };
+        window.syncNotifs = (l) => { liveData.notifs = l; renderNotifs(); };
+        
+        window.syncBorcData = (l) => { 
+            liveData.borc = l; 
+            renderBorcLists(); 
+            setTimeout(window.checkOverdueDebts, 2000); 
+        };
+        
+        window.syncMesaiData = (l) => { liveData.mesai = l; renderMesaiList(liveData.mesai.filter(m=>m.month===selectedMonthIndex && m.day===selectedDay)); };
+        window.syncMalzemeData = (l) => { liveData.malzeme = l; renderMalzemeList(); };
+
+        window.checkOverdueDebts = () => {
+            const now = new Date();
+            liveData.borc.filter(b => !b.resolved && b.type !== 'degisim').forEach(async (b) => {
+                if(!b.date) return;
+                const parts = b.date.split('.');
+                if(parts.length === 3) {
+                    const bDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                    const diffMs = now - bDate;
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const weeksPassed = Math.floor(diffDays / 7);
+                    
+                    const currentNotified = b.notifiedWeeks || 0;
+                    
+                    if (weeksPassed > 0 && weeksPassed > currentNotified) {
+                        b.notifiedWeeks = weeksPassed;
+                        
+                        const timeStr = now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                        const dateStr = now.toLocaleDateString('tr-TR');
+                        
+                        await window.fbAddNotification({
+                            msg: `⚠️ Geciken Borç! ${b.firma} (${b.malzeme}) - ${weeksPassed}. haftası doldu!`,
+                            date: dateStr,
+                            time: timeStr,
+                            read: false
+                        });
+                        
+                        await window.fbUpdateBorcNotified(b.id, weeksPassed);
+                    }
+                }
+            });
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginPassInput = document.getElementById('loginPass');
+            const loginUserSel = document.getElementById('loginUserSelect');
+            const loginScreenEl = document.getElementById('loginScreen');
+
+            const triggerLoginOnEnter = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLogin();
+                }
+            };
+
+            if (loginPassInput) loginPassInput.addEventListener('keypress', triggerLoginOnEnter);
+            if (loginUserSel) loginUserSel.addEventListener('keypress', triggerLoginOnEnter);
+            if (loginScreenEl) {
+                loginScreenEl.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && loginScreenEl.style.display !== 'none' && !loginScreenEl.classList.contains('opacity-0')) {
+                        handleLogin();
+                    }
+                });
+            }
+        });
+
+        function getCombStaff() { let comb = [...defaultStaff]; liveData.staff.forEach(ls => { let i = comb.findIndex(c => c.name === ls.name); if(i !== -1) comb[i] = {...comb[i], ...ls}; else comb.push(ls); }); return comb.filter(s => s.status !== 'Deleted'); }
+
+        let activeVideoStream = null; let qrScanInterval = null;
+
+        window.startCamera = async () => {
+            const videoEl = document.getElementById('qrCameraVideo'); const placeholder = document.getElementById('cameraPlaceholder'); const canvasEl = document.getElementById('qrCanvas'); const canvasCtx = canvasEl.getContext('2d');
+            try {
+                activeVideoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } });
+                videoEl.srcObject = activeVideoStream; placeholder.style.display = 'none'; window.showToast('Kamera açıldı, QR bekleniyor...', false);
+                qrScanInterval = setInterval(() => {
+                    if (videoEl.readyState === videoEl.HAVE_ENOUGH_DATA) {
+                        canvasEl.height = videoEl.videoHeight; canvasEl.width = videoEl.videoWidth; canvasCtx.drawImage(videoEl, 0, 0, canvasEl.width, canvasEl.height);
+                        const imgData = canvasCtx.getImageData(0, 0, canvasEl.width, canvasEl.height); const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
+                        if (code) { const scannedText = code.data.trim(); if (scannedText.includes('GENCER_TEKNIK_PDKS_KARTI') || scannedText.includes('GENCER')) { handleSuccessfulQRScan(); } else { window.showToast('Geçersiz QR Kod!'); } }
+                    }
+                }, 300);
+            } catch (err) { window.showToast('Kameraya erişilemedi!'); }
+        }
+
+        window.stopCamera = () => { if (qrScanInterval) clearInterval(qrScanInterval); if (activeVideoStream) { activeVideoStream.getTracks().forEach(track => track.stop()); activeVideoStream = null; } const videoEl = document.getElementById('qrCameraVideo'); if (videoEl) videoEl.srcObject = null; const ph = document.getElementById('cameraPlaceholder'); if (ph) ph.style.display = 'flex'; }
+        function closePdksModal() { stopCamera(); document.getElementById('actionPanelSection').classList.add('hidden'); document.getElementById('qrScanSection').classList.remove('hidden'); closeModal('pdksModal'); }
+        function handleSuccessfulQRScan() { stopCamera(); window.showToast('QR Kod Doğrulandı!', false); document.getElementById('qrScanSection').classList.add('hidden'); document.getElementById('actionPanelSection').classList.remove('hidden'); }
+
+        function applyRoles() {
+            const isNormal = currentUserRole === 'Normal'; const isYetkili = currentUserRole === 'Yetkili';
+            const bBorcSecim = document.getElementById('btn_borc_secim'); const cBorcSecim = document.getElementById('content_borc_secim'); const lBorc = document.getElementById('lock_borc');
+            const bMesai = document.getElementById('btn_mesai'); const cMesai = document.getElementById('content_mesai'); const lMesai = document.getElementById('lock_mesai');
+            const bNotif = document.getElementById('btn_notif');
+
+            if(isNormal) { lBorc.classList.remove('hidden'); cBorcSecim.classList.add('opacity-0'); bBorcSecim.onclick = null; } else { lBorc.classList.add('hidden'); cBorcSecim.classList.remove('opacity-0'); bBorcSecim.onclick = () => openModal('borcSecimModal'); }
+            if(isNormal || isYetkili) { lMesai.classList.remove('hidden'); cMesai.classList.add('opacity-0'); bMesai.onclick = null; } else { lMesai.classList.add('hidden'); cMesai.classList.remove('opacity-0'); bMesai.onclick = () => openModal('mesaiModal'); }
+            if(isNormal) bNotif.classList.add('hidden'); else bNotif.classList.remove('hidden');
+        }
+
+        function renderLoginSelect() { const s=document.getElementById('loginUserSelect'); if(s) s.innerHTML = getCombStaff().filter(x=>x.status==='Aktif').map(x=>`<option value="${x.name}">${x.name}</option>`).join(''); }
+        
+        window.handleLogin = () => { const n = document.getElementById('loginUserSelect').value; const p = document.getElementById('loginPass').value; const u = getCombStaff().find(x=>x.name === n); if(!u) { window.showToast('Personel seçiniz!'); return; } let expected = u.pass || '1234'; if(u.name === 'HASAN GÜRBÜZ') expected = 'hasan998'; if(p === expected) { currentUser = u.name; currentUserRole = u.role || 'Normal'; currentUserId = u.id; document.getElementById('headerUserRole').innerText = currentUserRole; applyRoles(); const ls = document.getElementById('loginScreen'); ls.classList.add('opacity-0','scale-110'); setTimeout(()=>ls.style.display='none', 700); } else window.showToast('Şifre Hatalı!'); }
+
+        window.handleLogout = () => {
+            currentUser = null; 
+            currentUserRole = null; 
+            currentUserId = null;
+            document.getElementById('headerUserRole').innerText = 'SİSTEM';
+            document.getElementById('loginPass').value = ''; 
+            switchTab('home');
+            const ls = document.getElementById('loginScreen');
+            ls.style.display = 'flex';
+            setTimeout(() => { ls.classList.remove('opacity-0', 'scale-110'); }, 10);
+            window.showToast('Başarıyla çıkış yapıldı.', false);
+        };
+
+        function renderPdksSelect() { const lbl = document.getElementById('pdksActiveUserLabel'); if(lbl) lbl.innerText = currentUser || 'Bilinmiyor'; }
+
+        function renderManualAdminStaffSelect() {
+            const sel = document.getElementById('manualAdminStaffSelect'); const panel = document.getElementById('manualPdksAdminPanel'); if(!sel || !panel) return;
+            if(currentUserRole === 'Admin') { panel.classList.remove('hidden'); document.getElementById('manualAdminRoleBadge').innerText = currentUserRole; const activeStaff = getCombStaff().filter(x => x.status === 'Aktif'); sel.innerHTML = activeStaff.map(x => `<option value="${x.name}">${x.name} (${x.role || 'Normal'})</option>`).join(''); } else { panel.classList.add('hidden'); }
+        }
+
+        window.recordManualAdminPdks = async (type) => {
+            const sel = document.getElementById('manualAdminStaffSelect'); if(!sel) return; const targetName = sel.value; if(!targetName) { window.showToast('Lütfen personel seçin!'); return; }
+            
+            const customTimeVal = type === 'Giriş' 
+                ? document.getElementById('manualAdminInTimeInput')?.value 
+                : document.getElementById('manualAdminOutTimeInput')?.value;
+            
+            let h, m, s, timeStr, dateStr;
+            const now = new Date();
+            dateStr = now.toLocaleDateString('tr-TR');
+
+            if(customTimeVal && customTimeVal.trim() !== '') {
+                const parts = customTimeVal.split(':');
+                h = parseInt(parts[0], 10);
+                m = parseInt(parts[1], 10);
+                s = 0;
+                timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            } else {
+                h = now.getHours(); m = now.getMinutes(); s = now.getSeconds();
+                timeStr = now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            }
+
+            if(type === 'Giriş' && (h > 8 || (h === 8 && m >= 10))) {
+                await window.fbAddNotification({ msg: `${targetName} (Manuel) Giriş Saati: ${timeStr}`, date: dateStr, time: timeStr, read: false });
+            }
+
+            if(type === 'Çıkış' && (h > 18 || (h === 18 && m > 0))) {
+                let over = (h - 18) + (m / 60) + (s / 3600);
+                over = parseFloat(over.toFixed(2));
+                if(over > 0) {
+                    await window.fbAddMesai({
+                        person: targetName,
+                        hours: over,
+                        note: 'Otomatik Manuel Çıkış Mesaisi',
+                        date: dateStr,
+                        day: now.getDate(),
+                        month: now.getMonth(),
+                        year: now.getFullYear()
+                    });
+                    window.showToast(`${targetName} için ${over} saat mesai eklendi!`, false);
+                }
+            }
+            
+            await window.fbAddPdks({ name: `${targetName} (Manuel)`, type, time: timeStr, date: dateStr }); 
+            window.showToast(`Manuel ${type} Kaydedildi (${targetName}): ${timeStr}`, false); 
+            
+            if(type === 'Giriş') {
+                const inEl = document.getElementById('manualAdminInTimeInput');
+                if(inEl) inEl.value = '';
+            } else {
+                const outEl = document.getElementById('manualAdminOutTimeInput');
+                if(outEl) outEl.value = '';
+            }
+            
+            renderPdksLogs();
+        }
+        
+        window.recordPdks = async (type) => {
+            const name = currentUser; if(!name) return; const now = new Date(); const h = now.getHours(); const m = now.getMinutes(); const s = now.getSeconds(); const timeStr = now.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}); const dateStr = now.toLocaleDateString('tr-TR');
+            if(type === 'Giriş' && (h > 8 || (h === 8 && m >= 10))) await window.fbAddNotification({ msg: `${name} Giriş Saati: ${timeStr}`, date: dateStr, time: timeStr, read: false });
+            if(type === 'Çıkış' && (h > 18 || (h === 18 && m > 0))) { let over = (h - 18) + (m / 60) + (s / 3600); over = parseFloat(over.toFixed(2)); if(over > 0) { await window.fbAddMesai({ person: name, hours: over, note: 'Otomatik QR Çıkış Mesaisi', date: dateStr, day: now.getDate(), month: now.getMonth(), year: now.getFullYear() }); window.showToast(`${name} için ${over} saat otomatik mesai eklendi!`, false); } }
+            await window.fbAddPdks({ name, type, time: timeStr, date: dateStr }); window.showToast(`${type} Başarılı (${name}): ${timeStr}`, false); 
+            renderPdksLogs();
+            setTimeout(() => { 
+                closePdksModal(); 
+            }, 800);
+        }
+
+        let uploadedFaturaImgs = []; let uploadedMalzemeImgs = [];
+
+        window.compressImage = (file, callback) => {
+            const reader = new FileReader(); reader.readAsDataURL(file);
+            reader.onload = event => {
+                const img = new Image(); img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); const MAX = 800; let w = img.width; let h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+                    callback(canvas.toDataURL('image/jpeg', 0.6));
+                }
+            }
+        }
+
+        window.handleMultipleImageUpload = (input, type) => {
+            if(input.files && input.files.length > 0) {
+                Array.from(input.files).forEach(file => {
+                    window.compressImage(file, (base64) => {
+                        if(type === 'fatura') { uploadedFaturaImgs.push(base64); renderFaturaPreviews(); } 
+                        else { uploadedMalzemeImgs.push(base64); renderMalzemePreviews(); }
+                    });
+                });
+                input.value = ''; 
+            }
+        }
+
+        window.removeImage = (type, index) => {
+            if(type === 'fatura') { uploadedFaturaImgs.splice(index, 1); renderFaturaPreviews(); } 
+            else { uploadedMalzemeImgs.splice(index, 1); renderMalzemePreviews(); }
+        }
+
+        window.renderFaturaPreviews = () => {
+            const grid = document.getElementById('faturaPreviewGrid');
+            if(!grid) return;
+            grid.innerHTML = uploadedFaturaImgs.length === 0 ? '<span class="text-[10px] text-slate-500 italic p-1">Henüz fatura eklenmedi.</span>' : uploadedFaturaImgs.map((src, i) => `
+                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-600 shadow-sm flex-shrink-0">
+                    <img src="${src}" class="w-full h-full object-cover">
+                    <button onclick="removeImage('fatura', ${i})" class="absolute top-0.5 right-0.5 bg-rose-600 text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `).join('');
+        }
+
+        window.renderMalzemePreviews = () => {
+            const grid = document.getElementById('malzemePreviewGrid');
+            if(!grid) return;
+            grid.innerHTML = uploadedMalzemeImgs.length === 0 ? '<span class="text-[10px] text-slate-500 italic p-1">Henüz malzeme fotoğrafı eklenmedi.</span>' : uploadedMalzemeImgs.map((src, i) => `
+                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-600 shadow-sm flex-shrink-0">
+                    <img src="${src}" class="w-full h-full object-cover">
+                    <button onclick="removeImage('malzeme', ${i})" class="absolute top-0.5 right-0.5 bg-rose-600 text-white w-5 h-5 flex items-center justify-center rounded-full shadow-lg text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            `).join('');
+        }
+
+        window.saveMalzeme = () => {
+            const firma = document.getElementById('malzemeFirmaInput').value;
+            if(!firma) { window.showToast('Lütfen firma ismi girin!'); return; }
+            if(uploadedFaturaImgs.length === 0 && uploadedMalzemeImgs.length === 0) { window.showToast('En az bir belge veya malzeme fotoğrafı ekleyin!'); return; }
+            
+            window.fbAddMalzeme({ 
+                firma, fatura: [...uploadedFaturaImgs], malzeme: [...uploadedMalzemeImgs], 
+                addedBy: currentUser, date: new Date().toLocaleDateString('tr-TR') 
+            });
+            
+            window.showToast('Teslimat başarıyla kaydedildi!', false);
+            closeModal('addMalzemeModal');
+        }
+
+        window.renderMalzemeList = () => {
+            const search = (document.getElementById('malzemeSearch')?.value || '').toLowerCase();
+            const c = document.getElementById('malzemeListContainer'); if(!c) return;
+            const filtered = liveData.malzeme.filter(m => (m.firma || '').toLowerCase().includes(search)).sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+            
+            c.innerHTML = filtered.length === 0 ? '<div class="text-xs text-slate-500 text-center p-4">Kayıt bulunamadı.</div>' : filtered.map(m => {
+                const faturas = Array.isArray(m.fatura) ? m.fatura : (m.fatura ? [m.fatura] : []);
+                const malzemes = Array.isArray(m.malzeme) ? m.malzeme : (m.malzeme ? [m.malzeme] : []);
+                
+                const faturaHtml = faturas.length > 0 ? `
+                    <div class="mt-2 border-t border-slate-800/50 pt-2">
+                        <span class="text-[9px] text-slate-400 font-bold mb-1.5 block"><i class="fa-solid fa-file-invoice mr-1 text-slate-500"></i>Faturalar (${faturas.length})</span>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                            ${faturas.map(f => `<img src="${f}" onclick="viewImage('${f}')" class="w-14 h-14 object-cover rounded-lg border border-slate-700 cursor-pointer hover:opacity-80 flex-shrink-0 shadow-sm">`).join('')}
+                        </div>
+                    </div>` : '';
+
+                const malzemeHtml = malzemes.length > 0 ? `
+                    <div class="mt-2 border-t border-slate-800/50 pt-2">
+                        <span class="text-[9px] text-emerald-400/80 font-bold mb-1.5 block"><i class="fa-solid fa-box-open mr-1 text-emerald-500/80"></i>Malzemeler (${malzemes.length})</span>
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                            ${malzemes.map(f => `<img src="${f}" onclick="viewImage('${f}')" class="w-14 h-14 object-cover rounded-lg border border-emerald-700/50 cursor-pointer hover:opacity-80 flex-shrink-0 shadow-sm">`).join('')}
+                        </div>
+                    </div>` : '';
+
+                return `
+                <div class="bg-slate-900/90 p-3.5 rounded-2xl border border-emerald-500/30 shadow-lg">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-black text-white text-[13px] uppercase tracking-wider">${m.firma}</span>
+                        <span class="text-[9px] bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded font-bold text-emerald-400"><i class="fa-solid fa-user-check mr-1"></i>${m.addedBy}</span>
+                    </div>
+                    ${faturaHtml}
+                    ${malzemeHtml}
+                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-800">
+                        <span class="text-[10px] text-slate-500 font-bold"><i class="fa-regular fa-calendar mr-1"></i>${m.date}</span>
+                        ${currentUserRole==='Admin' ? `<button onclick="window.fbDeleteMalzeme('${m.id}')" class="text-[10px] text-rose-500 hover:text-rose-400 font-bold px-3 py-1 rounded bg-rose-500/10 transition-colors"><i class="fa-solid fa-trash mr-1"></i>Sil</button>` : ''}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        window.viewImage = (base64Str) => { const viewer = document.getElementById('imageViewerModal'); const img = document.getElementById('fullScreenImage'); if(viewer && img) { img.src = base64Str; viewer.classList.remove('modal-hidden'); viewer.classList.add('modal-visible'); } }
+
+        // BORÇ VEYA DEĞİŞİM SEÇİMİNİ AÇ
+        window.openBorcModal = (type) => {
+            currentBorcType = type;
+            const modalTitle = document.getElementById('borcModalTitle');
+            const addTitle = document.getElementById('addBorcTitle');
+            const modalIcon = document.getElementById('borcModalIcon');
+            const activeTitle = document.getElementById('borcListActiveTitle');
+            const addBtn = document.getElementById('borcAddBtn');
+            const saveBtn = document.getElementById('saveBorcBtn');
+
+            closeModal('borcSecimModal');
+
+            if(type === 'borc') {
+                modalTitle.innerHTML = `<i class="fa-solid fa-file-invoice-dollar text-[#F38E23] mr-2"></i>Borç Takip`;
+                addTitle.innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Yeni Borç Ekle`;
+                activeTitle.innerHTML = `● Aktif Borçlar`;
+                activeTitle.className = "text-xs font-bold text-amber-400 mb-2 uppercase tracking-wider";
+                
+                addBtn.className = "w-8 h-8 rounded-lg bg-[#F38E23] text-[#121A29] font-black flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all";
+                saveBtn.className = "w-full py-3 bg-[#F38E23] text-[#121A29] font-black text-xs rounded-xl shadow-lg mt-2 hover:scale-105 active:scale-95 transition-all";
+                saveBtn.innerText = "Borcu Kaydet";
+            } else {
+                modalTitle.innerHTML = `<i class="fa-solid fa-arrow-right-arrow-left text-emerald-500 mr-2"></i>Değişim Takip`;
+                addTitle.innerHTML = `<i class="fa-solid fa-plus-circle mr-1"></i> Yeni Değişim Ekle`;
+                activeTitle.innerHTML = `● Bekleyen Değişimler`;
+                activeTitle.className = "text-xs font-bold text-emerald-400 mb-2 uppercase tracking-wider";
+                
+                addBtn.className = "w-8 h-8 rounded-lg bg-emerald-500 text-slate-900 font-black flex items-center justify-center shadow hover:scale-105 active:scale-95 transition-all";
+                saveBtn.className = "w-full py-3 bg-emerald-600 text-white font-black text-xs rounded-xl shadow-lg mt-2 hover:scale-105 active:scale-95 transition-all";
+                saveBtn.innerText = "Değişimi Kaydet";
+            }
+
+            renderBorcLists();
+            openModal('borcModal');
+        }
+
+        function renderBorcLists() {
+            const actC = document.getElementById('activeBorcList'); const resC = document.getElementById('resolvedBorcList'); if(!actC || !resC) return;
+            
+            // Seçili türe göre (borc veya degisim) filtreleme yap
+            const targetType = currentBorcType;
+            const allItems = liveData.borc.filter(b => (b.type || 'borc') === targetType);
+            
+            const active = allItems.filter(b => !b.resolved); 
+            const resolved = allItems.filter(b => b.resolved);
+            
+            const colorClass = targetType === 'borc' ? 'amber-500/40' : 'emerald-500/40';
+            const textClass = targetType === 'borc' ? 'text-amber-400' : 'text-emerald-400';
+            
+            actC.innerHTML = active.length === 0 ? `<div class="text-xs text-slate-500 text-center p-2">${targetType === 'borc' ? 'Aktif borç yok.' : 'Bekleyen değişim yok.'}</div>` : active.map(item => `<div class="bg-slate-900 p-3 rounded-xl border border-${colorClass} flex justify-between items-center text-xs transition-all hover:bg-slate-800"><div><span class="font-bold text-white">${item.firma}</span><span class="${textClass} font-bold ml-1">(${item.malzeme} - ${item.adet} Adet)</span><p class="text-[10px] text-slate-400 mt-0.5">${item.ack || ''}</p><p class="text-[9px] text-slate-500 mt-1 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${item.date || ''}</p></div><div class="flex gap-1"><button onclick="window.fbUpdateBorcStatus('${item.id}', true)" class="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded font-bold hover:bg-emerald-500/40 transition-colors">Çöz</button><button onclick="window.fbDeleteBorc('${item.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition-colors"><i class="fa-solid fa-trash"></i></button></div></div>`).join('');
+            resC.innerHTML = resolved.length === 0 ? `<div class="text-xs text-slate-500 text-center p-2">Çözülen kayıt yok.</div>` : resolved.map(item => `<div class="bg-slate-950 opacity-75 p-3 rounded-xl border border-emerald-500/30 flex justify-between items-center text-xs transition-all"><div><span class="font-bold text-slate-300 line-through">${item.firma}</span><span class="text-emerald-400 font-bold ml-1">(${item.malzeme} - ${item.adet} Adet)</span><p class="text-[9px] text-slate-500 mt-1 flex items-center gap-1"><i class="fa-regular fa-calendar"></i> ${item.date || ''}</p></div><div class="flex gap-1"><button onclick="window.fbUpdateBorcStatus('${item.id}', false)" class="px-2 py-1 bg-amber-500/20 text-amber-400 rounded font-bold hover:bg-amber-500/40 transition-colors">Aktif Et</button><button onclick="window.fbDeleteBorc('${item.id}')" class="p-1 text-slate-400 hover:text-rose-400 transition-colors"><i class="fa-solid fa-trash"></i></button></div></div>`).join('');
+        }
+        
+        window.saveNewBorc = () => { 
+            const date = document.getElementById('borcDateInput').value; 
+            const firma = document.getElementById('borcFirma').value; 
+            const malzeme = document.getElementById('borcMalzeme').value; 
+            const adet = document.getElementById('borcAdet').value; 
+            const ack = document.getElementById('borcAck').value; 
+            
+            if(!firma || !malzeme) { window.showToast('Firma ve Malzeme zorunludur!'); return; } 
+            
+            let formattedDate = date ? date.split('-').reverse().join('.') : new Date().toLocaleDateString('tr-TR'); 
+            
+            // currentBorcType'ı veritabanına ekle
+            window.fbAddBorc({ firma, malzeme, adet: adet||'1', ack, date: formattedDate, resolved: false, type: currentBorcType }); 
+            
+            closeModal('addBorcModal'); 
+            document.getElementById('borcFirma').value=''; document.getElementById('borcMalzeme').value=''; document.getElementById('borcAdet').value=''; document.getElementById('borcAck').value=''; 
+        }
+
+        let pressTimer; window.startPress = (id) => { pressTimer = setTimeout(() => { if(confirm('Bu mesai kaydını silmek istiyor musunuz?')) window.fbDeleteMesai(id); }, 800); }; window.cancelPress = () => { clearTimeout(pressTimer); }
+        function renderMesaiList(list) { const c = document.getElementById('mesaiListContainer'); if(!c) return; c.innerHTML = list.length === 0 ? '<div class="text-xs text-slate-500 text-center p-3">Kayıt bulunmuyor.</div>' : list.map(i => `<div onpointerdown="startPress('${i.id}')" onpointerup="cancelPress()" onpointerleave="cancelPress()" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-xs select-none cursor-pointer transition-all hover:bg-slate-900"><div><p class="font-bold text-white">${i.person}</p><p class="text-[10px] text-slate-400">${i.note} - ${i.date}</p></div><span class="text-[#F38E23] font-bold">+${i.hours} Saat</span></div>`).join(''); }
+        function renderManualChecklist() { const c = document.getElementById('manualStaffChecklist'); if(!c) return; const staff = getCombStaff().filter(x=>x.status==='Aktif'); c.innerHTML = staff.map(x=> `<div class="flex justify-between items-center bg-slate-950 p-2 rounded border border-slate-800"><label class="text-xs text-white flex items-center gap-2"><input type="checkbox" id="m_chk_${x.id}" checked> ${x.name}</label><input type="number" step="0.5" id="m_hr_${x.id}" value="8" class="w-16 bg-slate-900 border border-slate-700 text-xs text-white rounded p-1.5 text-center outline-none focus:border-amber-500 font-bold"></div>`).join(''); }
+        window.applyCommonHours = () => { const commonVal = document.getElementById('commonHoursInput').value; getCombStaff().filter(x=>x.status==='Aktif').forEach(x => { const hrInput = document.getElementById(`m_hr_${x.id}`); if(hrInput) hrInput.value = commonVal; }); window.showToast(`Tüm personele ${commonVal} saat atandı!`, false); }
+        window.saveManualMesai = () => { const rawDate = document.getElementById('manualMesaiDate').value; const note = document.getElementById('manualMesaiNote').value || 'Manuel Mesai'; if(!rawDate) { window.showToast('Lütfen tarih seçin!'); return; } const dateObj = new Date(rawDate); const day = dateObj.getDate(); const month = dateObj.getMonth(); const year = dateObj.getFullYear(); const dateStr = rawDate.split('-').reverse().join('.'); getCombStaff().filter(x=>x.status==='Aktif').forEach(x => { const chk = document.getElementById(`m_chk_${x.id}`); if(chk && chk.checked) { const hrs = parseFloat(document.getElementById(`m_hr_${x.id}`).value || 0); if(hrs > 0) window.fbAddMesai({ person: x.name, hours: hrs, note, date: dateStr, day, month, year }); } }); window.showToast('Mesailer başarıyla eklendi!', false); closeModal('addMesaiModal'); }
+
+        function renderNotifs() { const c = document.getElementById('notifListContainer'); const b = document.getElementById('notifBadge'); if(!c || !b) return; const unread = liveData.notifs.length; if(unread > 0) b.classList.remove('hidden'); else b.classList.add('hidden'); let sorted = [...liveData.notifs].sort((a,b)=> (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)); c.innerHTML = sorted.map(n => `<div class="bg-rose-950/30 p-3 rounded-xl border border-rose-500/30 flex justify-between items-center text-xs transition-all"><div><span class="font-bold text-rose-400"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${n.msg}</span><p class="text-[9px] text-slate-400">${n.date} - ${n.time}</p></div><button onclick="window.fbDeleteNotif('${n.id}')" class="p-2 text-rose-500 hover:text-rose-300 transition-colors"><i class="fa-solid fa-check text-sm"></i></button></div>`).join(''); }
+
+        function renderPassSelect() { const s = document.getElementById('passUserSelect'); if(!s) return; const staff = getCombStaff().filter(x=>x.status==='Aktif'); let allowedStaff = []; if(currentUserRole === 'Admin') allowedStaff = staff; else if(currentUserRole === 'Yetkili') allowedStaff = staff.filter(x => (x.role || 'Normal') === 'Normal' || x.name === currentUser); else allowedStaff = staff.filter(x => x.name === currentUser); s.innerHTML = allowedStaff.map(x=>`<option value="${x.id}" ${x.name===currentUser?'selected':''}>${x.name} (${x.role||'Normal'})</option>`).join(''); }
+        
+        function renderAdminPasswordList() {
+            const panel = document.getElementById('adminPasswordListPanel');
+            const container = document.getElementById('adminPassListContainer');
+            if (!panel || !container) return;
+
+            if (currentUserRole !== 'Admin') {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            const staffList = getCombStaff().filter(x => x.status === 'Aktif');
+
+            container.innerHTML = staffList.map(s => {
+                let currentPass = s.pass || '1234';
+                if(s.name === 'HASAN GÜRBÜZ') currentPass = 'hasan998';
+                
+                const roleName = s.role || 'Normal';
+                let roleBadgeClass = 'bg-slate-800 text-slate-400 border-slate-700';
+                if (roleName === 'Admin') {
+                    roleBadgeClass = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+                } else if (roleName === 'Yetkili') {
+                    roleBadgeClass = 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+                }
+                
+                return `
+                    <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-white flex items-center gap-1.5">
+                                ${s.name}
+                                <span class="text-[8px] px-1.5 py-0.5 rounded font-bold border ${roleBadgeClass}">${roleName}</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
+                            <i class="fa-solid fa-lock text-[10px] text-amber-400"></i>
+                            <span class="font-mono text-amber-300 font-bold tracking-wider text-xs">${currentPass}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.openPasswordModal = () => { renderPassSelect(); renderAdminPasswordList(); openModal('passwordModal'); }
+        window.updatePassword = () => { const id = document.getElementById('passUserSelect').value; const pass = document.getElementById('newPassInput').value; if(!pass || pass.length < 3) { window.showToast('Şifre en az 3 hane olmalı!'); return; } const targetUser = getCombStaff().find(x => x.id === id); if(!targetUser) { window.showToast('Personel bulunamadı!'); return; } if(currentUserRole === 'Normal' && targetUser.name !== currentUser) { window.showToast('Yetkiniz yok!'); return; } if(currentUserRole === 'Yetkili' && (targetUser.role === 'Admin' || targetUser.role === 'Yetkili') && targetUser.name !== currentUser) { window.showToast('Yetkili başka yetkili/admin şifresi değiştiremez!'); return; } window.fbUpdatePassword(id, pass); document.getElementById('newPassInput').value = ''; renderAdminPasswordList(); closeModal('passwordModal'); }
+        window.switchTab = (t) => { const p = document.getElementById('profileTab'); if(t === 'profile') { if(currentUserRole !== 'Admin') { window.showToast('Sadece Admin Girebilir!'); return; } p.classList.remove('modal-hidden'); p.classList.add('modal-visible'); } else { p.classList.remove('modal-visible'); p.classList.add('modal-hidden'); } }
+        function renderProfileStaffList() { const c = document.getElementById('profileStaffList'); if(!c) return; c.innerHTML = getCombStaff().map(s => `<div class="bg-slate-950 p-3 rounded-lg text-xs text-white border border-slate-800 flex justify-between items-center"><div><span class="font-bold text-[13px] text-amber-400">${s.name}</span><select onchange="window.fbUpdateStaffRole('${s.id}', '${s.name}', this.value)" class="ml-2 bg-slate-900 border border-slate-700 rounded text-[9px] p-0.5 outline-none"><option value="Normal" ${(s.role||'Normal')==='Normal'?'selected':''}>Normal</option><option value="Yetkili" ${(s.role||'Normal')==='Yetkili'?'selected':''}>Yetkili</option><option value="Admin" ${(s.role||'Normal')==='Admin'?'selected':''}>Admin</option></select></div><div class="flex gap-2"><button onclick="window.fbUpdateStaffStatus('${s.id}','${s.name}','Aktif')" class="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/40 transition-colors">Aktif</button><button onclick="window.fbUpdateStaffStatus('${s.id}','${s.name}','Pasif')" class="px-2 py-1 bg-rose-500/20 text-rose-400 rounded hover:bg-rose-500/40 transition-colors">Pasif</button></div></div>`).join(''); }
+        window.addNewCustomStaff = () => { const i = document.getElementById('newStaffName'); if(i.value) { window.fbAddStaff(i.value); i.value=''; } }
+
+        function renderMonthsGrid() { document.getElementById('monthsGrid').innerHTML = mNames.map((n,i)=>`<div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 flex flex-col justify-between items-center transition-all hover:border-amber-500/50"><span class="text-xs font-bold text-slate-200 mb-2">${n}</span><div class="flex gap-1 w-full"><button onclick="selectMonth(${i})" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded text-[10px] font-bold transition-all">Takvim</button><button onclick="openMonthlyReport(${i})" class="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded text-[10px] font-black transition-all">Rapor</button></div></div>`).join(''); }
+        window.showMonthsView = () => { document.getElementById('viewDays').classList.add('hidden'); document.getElementById('viewReport').classList.add('hidden'); document.getElementById('viewMonths').classList.remove('hidden'); renderMonthsGrid(); }
+        window.selectMonth = (i) => { selectedMonthIndex=i; document.getElementById('viewMonths').classList.add('hidden'); document.getElementById('viewReport').classList.add('hidden'); document.getElementById('viewDays').classList.remove('hidden'); document.getElementById('selectedMonthLabel').innerText = `${mNames[i]} ${currentYear}`; renderDaysGrid(); selectDay(1); }
+        window.openMonthlyReport = (i) => { selectedMonthIndex = i; document.getElementById('viewMonths').classList.add('hidden'); document.getElementById('viewDays').classList.add('hidden'); document.getElementById('viewReport').classList.remove('hidden'); document.getElementById('selectedReportMonthLabel').innerText = `${mNames[i]} ${currentYear} - Aylık Özet Rapor`; const staffList = getCombStaff(); const monthRecords = liveData.mesai.filter(m => m.month === i); let totals = {}; staffList.forEach(s => totals[s.name] = 0); monthRecords.forEach(m => { if(totals[m.person] !== undefined) totals[m.person] += parseFloat(m.hours || 0); else totals[m.person] = parseFloat(m.hours || 0); }); const repContainer = document.getElementById('monthlyReportList'); repContainer.innerHTML = Object.entries(totals).map(([name, hrs]) => `<div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs"><span class="font-bold text-white">${name}</span><span class="text-amber-400 font-black text-sm">${hrs} Saat</span></div>`).join(''); }
+        function renderDaysGrid() { let h=''; for(let d=1; d<=31; d++) h+=`<button onclick="selectDay(${d})" class="py-1.5 rounded text-xs font-bold transition-all ${d===selectedDay?'bg-[#F38E23] text-slate-950 scale-105':'bg-slate-950 text-slate-300 border border-slate-800 hover:border-amber-500'}">${d}</button>`; document.getElementById('daysGrid').innerHTML=h; }
+        window.selectDay = (d) => { selectedDay=d; renderDaysGrid(); renderMesaiList(liveData.mesai.filter(m=>m.month===selectedMonthIndex && m.day===d)); }
+        
+        function renderPdksLogs() { 
+            const c = document.getElementById('pdksLogContainer'); 
+            const adminPanel = document.getElementById('adminPdksLogsAdminOnly');
+            if(!c || !adminPanel) return; 
+
+            if (currentUserRole !== 'Admin') {
+                adminPanel.classList.add('hidden');
+                return;
+            }
+
+            adminPanel.classList.remove('hidden');
+            let logs = [...liveData.pdks].reverse();
+
+            if(logs.length === 0) {
+                c.innerHTML = '<div class="text-xs text-slate-500 text-center p-3">Henüz giriş/çıkış kaydı bulunmuyor.</div>';
+                return;
+            }
+
+            c.innerHTML = logs.map(i => `
+                <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs text-white shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid ${i.type==='Giriş'?'fa-right-to-bracket text-emerald-400':'fa-right-from-bracket text-rose-400'} text-xs"></i>
+                        <div>
+                            <span class="font-bold block text-slate-200">${i.name}</span>
+                            <span class="text-[9px] text-slate-400"><i class="fa-regular fa-calendar-check mr-1"></i>${i.date || ''} - ${i.time}</span>
+                        </div>
+                    </div>
+                    <span class="font-black text-[11px] ${i.type==='Giriş'?'text-emerald-400 border-emerald-500/20 bg-emerald-500/10':'text-rose-400 border-rose-500/20 bg-rose-500/10'} px-2.5 py-1 rounded-lg border">${i.type}</span>
+                </div>
+            `).join(''); 
+        }
+
+        window.openModal = (id) => { 
+            const m = document.getElementById(id); if(m) { m.classList.remove('modal-hidden'); m.classList.add('modal-visible'); }
+            if(id==='mesaiModal') showMonthsView(); 
+            if(id==='pdksModal') { renderPdksSelect(); renderManualAdminStaffSelect(); renderPdksLogs(); document.getElementById('actionPanelSection').classList.add('hidden'); document.getElementById('qrScanSection').classList.remove('hidden'); }
+            if(id==='addBorcModal') { document.getElementById('borcDateInput').value = new Date().toISOString().split('T')[0]; }
+            if(id==='addMesaiModal') { document.getElementById('manualMesaiDate').value = new Date().toISOString().split('T')[0]; renderManualChecklist(); }
+            if(id==='addMalzemeModal') { 
+                uploadedFaturaImgs = []; uploadedMalzemeImgs = []; 
+                renderFaturaPreviews(); renderMalzemePreviews(); 
+                document.getElementById('malzemeFirmaInput').value = ''; 
+            }
+        }
+        window.closeModal = (id) => { const modal = document.getElementById(id); if(modal) { modal.classList.remove('modal-visible'); modal.classList.add('modal-hidden'); } }
+    </script>
+</body>
+</html>
